@@ -27,7 +27,8 @@ export class AppService {
     const md5 = require('md5');
 
     //loading
-    spin.start(`Loading Environment Variables...`);
+    spin.start(`This script will create will guide you to setup credential system`);
+    spin.start(`Loading Environment Variables from the .env file...`);
     let ULPCLI_VERSION = null;
     let ULPCLI_NAME = null;
     let BULK_ISSUANCE_URL = null;
@@ -59,7 +60,7 @@ export class AppService {
     console.log(JSON.stringify(envs, null, '\t'));
 
     //client token
-    spin.start(`Getting Client Token...`);
+    spin.start(`Keycloak admin account is getting created (This token will use to call bulk credential API's)...`);
     let client_response = await new Promise<any>(async (done) => {
       const data = JSON.stringify({
         username: CLIENT_USERNAME,
@@ -109,7 +110,7 @@ export class AppService {
       );
 
       //generate did
-      spin.start(`Getting DID...`);
+      spin.start(`Creating Identity key for the school `);
       let ISSUER_ID = 'school_' + Math.floor(Math.random() * 1000 + 1);
       let did_response = await new Promise<any>(async (done) => {
         const data = JSON.stringify({
@@ -133,7 +134,7 @@ export class AppService {
         done(response_data);
       });
       if (did_response?.error || did_response?.success === false) {
-        spin.fail('DID Failed.');
+        spin.fail('Issuer Identity creation failed');
         console.log(
           JSON.stringify(
             did_response?.error
@@ -146,7 +147,7 @@ export class AppService {
           ),
         );
       } else {
-        spin.succeed('Got DID.');
+        spin.succeed('Issuer Identity created successfully');
         let ISSUER_DID = did_response.result;
         console.log(
           JSON.stringify(
@@ -159,7 +160,7 @@ export class AppService {
         );
 
         //issuer register
-        spin.start(`Getting Issuer Registered...`);
+        spin.start(`Saving Issuer information in registry...`);
         const issuer_data = {
           name: ISSUER_ID,
           did: ISSUER_DID,
@@ -191,7 +192,7 @@ export class AppService {
           issuer_invite_response?.error ||
           issuer_invite_response?.success === false
         ) {
-          spin.fail('Issuer Registration Token Failed.');
+          spin.fail('Storing issuer credentials failed');
           console.log(
             JSON.stringify(
               issuer_invite_response?.error
@@ -204,7 +205,7 @@ export class AppService {
             ),
           );
         } else {
-          spin.succeed('Issuer Registered.');
+          spin.succeed('Issuer information stored successfully.');
           console.log(JSON.stringify(issuer_data, null, '\t'));
           //issuer token
           spin.start(`Getting Issuer Token...`);
@@ -231,7 +232,7 @@ export class AppService {
             done(response_data);
           });
           if (issuer_response?.error || issuer_response?.success === false) {
-            spin.fail('Issuer Token Failed.');
+            spin.fail('Failed to get issuer access token to create credential');
             console.log(
               JSON.stringify(
                 issuer_response?.error
@@ -244,7 +245,7 @@ export class AppService {
               ),
             );
           } else {
-            spin.succeed('Got Issuer Token.');
+            spin.succeed('Got Issuer access Token to create credentials');
             let issuer_token = issuer_response.result;
             console.log(
               JSON.stringify(
@@ -256,7 +257,7 @@ export class AppService {
               ),
             );
             //creating sample data files
-            spin.start(`Creating CSV Files...`);
+            spin.start(`Creating sample CSV Files to create dummy records...`);
             let enrollment_csv_data = [];
             let assessment_csv_data = [];
             let csv_files_status = await new Promise<any>(async (done) => {
@@ -386,7 +387,7 @@ export class AppService {
               console.log(JSON.stringify(csv_files_status, null, '\t'));
               //post generated files to bulk enrollment and bulk assance
               //upload proof Of Enrollment
-              spin.start(`Uploading proof Of Enrollment...`);
+              spin.start(`Creating proof Of Enrollment against sample records...`);
               let enrollment_response = await new Promise<any>(async (done) => {
                 var data = new FormData();
                 data.append(
@@ -430,7 +431,7 @@ export class AppService {
                 enrollment_response?.error ||
                 enrollment_response?.success === false
               ) {
-                spin.fail('Upload proof Of Enrollment Failed.');
+                spin.fail('Creating proof Of Enrollment Failed.');
                 console.log(
                   JSON.stringify(
                     enrollment_response?.error
@@ -444,12 +445,12 @@ export class AppService {
                 );
               } else {
                 spin.succeed(
-                  'Uploaded proofOfEnrollment. File ' +
+                  'proofOfEnrollment created successfully ' +
                     csv_files_status.Enrollment,
                 );
                 console.log(JSON.stringify(enrollment_response, null, '\t'));
                 //upload proof Of Assessment
-                spin.start(`Uploading proof Of Assessment...`);
+                spin.start(`Creating sample records for proof Of Assessment credentials...`);
                 let assessment_response = await new Promise<any>(
                   async (done) => {
                     var data = new FormData();
@@ -500,7 +501,7 @@ export class AppService {
                   assessment_response?.error ||
                   assessment_response?.success === false
                 ) {
-                  spin.fail('Upload proof Of Assessment Failed.');
+                  spin.fail('Creating proof Of Assessment credentials Failed.');
                   console.log(
                     JSON.stringify(
                       assessment_response?.error
@@ -519,7 +520,7 @@ export class AppService {
                   );
                   console.log(JSON.stringify(assessment_response, null, '\t'));
                   //give result logs
-                  spin.start(`Loading Result...`);
+                  spin.start(`Do check the sample records and created frontend on the below links...`);
                   let result_output = await new Promise<any>(async (done) => {
                     let result_output_object = new Object();
                     result_output_object['Detail'] = {
