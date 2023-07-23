@@ -315,7 +315,7 @@ export class AppService {
             spin.start(`Getting Schema List of tag...${UNIQUE_SCHEMA_TAG}`);
 
             //aading 3 seconds wait for gettign created schema
-            await this.delay(3000);
+            await this.delay(5000);
 
             //console.log('UNIQUE_SCHEMA_TAG', UNIQUE_SCHEMA_TAG);
             let scheam_tag_text = UNIQUE_SCHEMA_TAG;
@@ -367,6 +367,66 @@ export class AppService {
                   '\t',
                 ),
               );
+              //create sample data
+              //generate dob
+              const startDate_dob = new Date('1990-01-01');
+              const endDate_dob = new Date('2005-12-31');
+              const timeDiff_dob =
+                endDate_dob.getTime() - startDate_dob.getTime();
+              const startDate = new Date('2020-01-01');
+              const endDate = new Date('2022-12-31');
+              const timeDiff = endDate.getTime() - startDate.getTime();
+              //generate sample data
+              let data_limit = 10;
+              let sample_data_test = [];
+              let gender_data = ['M', 'F'];
+              for (let i = 0; i < data_limit; i++) {
+                let student_first_name = faker.person.firstName();
+                let student_last_name = faker.person.lastName();
+                let student_username_name_temp =
+                  student_first_name +
+                  '_' +
+                  Math.floor(Math.random() * 1000 + 1);
+                let student_username_name =
+                  student_username_name_temp.toLowerCase();
+                let student_password = student_username_name;
+                let student_full_name =
+                  student_first_name + ' ' + student_last_name;
+                let student_id =
+                  Math.floor(Math.random() * 1000 + 1) +
+                  '_' +
+                  student_username_name;
+                const randomTime_dob = Math.random() * timeDiff_dob;
+                const randomDate_dob = new Date(
+                  startDate_dob.getTime() + randomTime_dob,
+                );
+                const randomDate_dob_txt = randomDate_dob
+                  .toISOString()
+                  .slice(0, 10);
+                let student_dob = randomDate_dob_txt;
+                const randomTime = Math.random() * timeDiff;
+                const randomDate = new Date(startDate.getTime() + randomTime);
+                let student_aadhar_token = md5(student_id);
+                sample_data_test.push({
+                  student_name: student_full_name,
+                  dob: student_dob,
+                  gender:
+                    gender_data[Math.floor(Math.random() * gender_data.length)],
+                  aadhar_token: student_aadhar_token,
+                  password: student_username_name,
+                  username: student_password,
+                  recoveryphone: '9999999999',
+                });
+              }
+              console.log(
+                JSON.stringify(
+                  {
+                    'Sample User Data': sample_data_test,
+                  },
+                  null,
+                  '\t',
+                ),
+              );
               //do untill all schemas data created
               for (
                 let i_schema = 0;
@@ -378,7 +438,7 @@ export class AppService {
                 console.log('#################');
                 //get first schema
                 spin.start(
-                  `Getting Required Fileds from ...${schema_list[i_schema].schema_name} schema`,
+                  `Getting Required Fields from ...${schema_list[i_schema].schema_name} schema`,
                 );
                 let schema_filed_response = await new Promise<any>(
                   async (done) => {
@@ -428,7 +488,7 @@ export class AppService {
                   spin.succeed(
                     `Got Schema Required Fields...${schema_list[i_schema].schema_name}`,
                   );
-                  console.log(
+                  /*console.log(
                     JSON.stringify(
                       {
                         'Schema Field List': schema_filed_response,
@@ -436,9 +496,197 @@ export class AppService {
                       null,
                       '\t',
                     ),
+                  );*/
+                  //create sample data
+                  let data_fields =
+                    schema_filed_response?.result?.required.concat(
+                      schema_filed_response?.result?.optional,
+                    );
+                  //if dob and gender then give some sample data filed
+                  /*console.log(
+                    JSON.stringify(
+                      {
+                        'Sample Data Field': data_fields,
+                      },
+                      null,
+                      '\t',
+                    ),
+                  );*/
+                  //create sample data
+                  let sent_scehma_subjects = [];
+                  for (let i = 0; i < data_limit; i++) {
+                    let newobj = new Object();
+                    for (let j = 0; j < data_fields.length; j++) {
+                      let sample_test = sample_data_test[i]?.[data_fields[j]]
+                        ? sample_data_test[i]?.[data_fields[j]]
+                        : null;
+                      //console.log(data_fields[j] + ' : ' + sample_test);
+                      newobj[data_fields[j]] = sample_test
+                        ? sample_data_test[i]?.[data_fields[j]]
+                        : faker.person.firstName();
+                    }
+                    sent_scehma_subjects.push(newobj);
+                  }
+                  /*console.log(
+                    JSON.stringify(
+                      {
+                        'Sample Schema Data': sent_scehma_subjects,
+                      },
+                      null,
+                      '\t',
+                    ),
+                  );*/
+                  //sent issue credentials
+                  //upload proof Of Enrollment
+                  spin.start(
+                    `Creating ${schema_list[i_schema].schema_name} against sample records...`,
+                  );
+                  let issue_response = await new Promise<any>(async (done) => {
+                    var data = JSON.stringify({
+                      schema_id: schema_list[i_schema].schema_id,
+                      issuerDetail: {
+                        did: ISSUER_DID,
+                      },
+                      vcData: {
+                        issuanceDate: '2023-04-06T11:56:27.259Z',
+                        expirationDate: '2023-12-06T11:56:27.259Z',
+                      },
+                      credentialSubject: sent_scehma_subjects,
+                    });
+                    const url = BULK_ISSUANCE_URL + '/bulk/v1/credential/issue';
+                    const config: AxiosRequestConfig = {
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                    };
+                    let response_data = null;
+                    try {
+                      const observable = this.httpService.post(
+                        url,
+                        data,
+                        config,
+                      );
+                      const promise = observable.toPromise();
+                      const response = await promise;
+                      response_data = response.data;
+                    } catch (e) {
+                      response_data = { error: e };
+                    }
+                    done(response_data);
+                  });
+                  if (
+                    issue_response?.error ||
+                    issue_response?.success === false
+                  ) {
+                    spin.fail(
+                      `Creating ${schema_list[i_schema].schema_name} Failed.`,
+                    );
+                    console.log(
+                      JSON.stringify(
+                        issue_response?.error
+                          ? issue_response.error
+                          : issue_response?.result
+                          ? issue_response.result
+                          : {},
+                        null,
+                        '\t',
+                      ),
+                    );
+                  } else {
+                    spin.succeed(
+                      `${schema_list[i_schema].schema_name} created successfully `,
+                    );
+                    console.log(JSON.stringify(issue_response, null, '\t'));
+                  }
+                }
+              }
+              //create keycloak account
+              for (let i = 0; i < sample_data_test.length; i++) {
+                console.log('#################');
+                console.log(sample_data_test[i].student_name);
+                //get first schema
+                spin.start(
+                  `Registering ...${sample_data_test[i].student_name}`,
+                );
+                let register_response = await new Promise<any>(async (done) => {
+                  const data = JSON.stringify({
+                    name: sample_data_test[i].student_name,
+                    dob: sample_data_test[i].dob,
+                    gender: sample_data_test[i].gender,
+                    recoveryphone: sample_data_test[i].recoveryphone,
+                    username: sample_data_test[i].username,
+                    password: sample_data_test[i].password,
+                    aadhar_token: sample_data_test[i].aadhar_token,
+                  });
+                  const url = BULK_ISSUANCE_URL + '/bulk/v1/user/create';
+                  const config: AxiosRequestConfig = {
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                  };
+                  let response_data = null;
+                  try {
+                    const observable = this.httpService.post(url, data, config);
+                    const promise = observable.toPromise();
+                    const response = await promise;
+                    response_data = response.data;
+                  } catch (e) {
+                    response_data = { error: e };
+                  }
+                  done(response_data);
+                });
+                if (
+                  register_response?.error ||
+                  register_response?.success === false
+                ) {
+                  spin.fail(
+                    'Failed to register learner ' +
+                      sample_data_test[i].student_name,
+                  );
+                  console.log(
+                    JSON.stringify(
+                      register_response?.error
+                        ? register_response.error
+                        : register_response?.result
+                        ? register_response.result
+                        : {},
+                      null,
+                      '\t',
+                    ),
+                  );
+                } else {
+                  spin.succeed(
+                    `Registered Learner in Keycloak...${sample_data_test[i].student_name}`,
                   );
                 }
               }
+              //show login details
+              //give result logs
+              spin.start(
+                `Do check the sample records and created frontend on the below links...`,
+              );
+              let result_output = await new Promise<any>(async (done) => {
+                let result_output_object = new Object();
+                result_output_object['Detail'] = {
+                  'Ewallet URL': EWALLET_URL,
+                  'Ewallet Instruction':
+                    'Open URL in web browser, click on login and use below learner username and password to view Credentials Certificate.',
+                  'Verification URL': VERIFICATION_URL,
+                  'Verification Instruction':
+                    'Open URL in web browser, scan credentials code and check verification status',
+                };
+                let learner_accounts = [];
+                for (let i = 0; i < sample_data_test.length; i++) {
+                  learner_accounts.push({
+                    username: sample_data_test[i].username,
+                    password: sample_data_test[i].password,
+                  });
+                }
+                result_output_object['Learner Accounts'] = learner_accounts;
+                done(result_output_object);
+              });
+              spin.succeed('Loaded Result.');
+              console.log(JSON.stringify(result_output, null, '\t'));
             }
           }
 
