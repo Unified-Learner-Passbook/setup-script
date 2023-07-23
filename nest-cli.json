@@ -8,6 +8,10 @@
       {
         "include": "./temp",
         "outDir": "dist/"
+      },
+      {
+        "include": "./sample_schemas",
+        "outDir": "dist/"
       }
     ]
   }
