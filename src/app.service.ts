@@ -412,7 +412,7 @@ export class AppService {
                   dob: student_dob,
                   gender:
                     gender_data[Math.floor(Math.random() * gender_data.length)],
-                  aadhar_token: student_aadhar_token,
+                  aadhaar_token: student_aadhar_token,
                   password: student_username_name,
                   username: student_password,
                   recoveryphone: '9999999999',
@@ -616,7 +616,7 @@ export class AppService {
                     recoveryphone: sample_data_test[i].recoveryphone,
                     username: sample_data_test[i].username,
                     password: sample_data_test[i].password,
-                    aadhar_token: sample_data_test[i].aadhar_token,
+                    aadhaar_token: sample_data_test[i].aadhaar_token,
                   });
                   const url = BULK_ISSUANCE_URL + '/bulk/v1/user/create';
                   const config: AxiosRequestConfig = {
