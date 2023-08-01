@@ -319,6 +319,7 @@ export class AppService {
 
             //console.log('UNIQUE_SCHEMA_TAG', UNIQUE_SCHEMA_TAG);
             let scheam_tag_text = UNIQUE_SCHEMA_TAG;
+            //scheam_tag_text='ulpq2'
             let schema_response = await new Promise<any>(async (done) => {
               var data = JSON.stringify({
                 taglist: scheam_tag_text,
